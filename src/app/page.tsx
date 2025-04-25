@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import AutocompleteSearch from '../components/AutocompleteSearch';
 import FilterPanel from '../components/FilterPanel';
 import DoctorCard from '../components/DoctorCard';
 import { Doctor, FilterState } from '../types/doctor';
 
-export default function Home() {
+function DoctorListContent() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,6 +175,69 @@ export default function Home() {
   );
 
   return (
+    <>
+      <div className="mb-12 max-w-2xl mx-auto">
+        <AutocompleteSearch
+          doctors={doctors || []}
+          onSearch={handleSearch}
+        />
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        <FilterPanel
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          availableSpecialities={availableSpecialities}
+        />
+
+        <div className="flex-1">
+          {isLoading ? (
+            renderLoadingSkeleton()
+          ) : error ? (
+            renderError()
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <div className="text-gray-600">
+                  Found {filteredDoctors.length} doctors
+                </div>
+                {filters.sortBy && (
+                  <div className="text-sm text-gray-500">
+                    Sorted by: {filters.sortBy === 'fees' ? 'Fees (Low to High)' : 'Experience (High to Low)'}
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredDoctors.map(doctor => (
+                  <DoctorCard key={doctor?.id || Math.random()} doctor={doctor} />
+                ))}
+              </div>
+              {filteredDoctors.length === 0 && (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <div className="text-gray-500 text-lg">No doctors found matching your criteria</div>
+                  <button 
+                    onClick={() => setFilters({
+                      search: '',
+                      consultationType: '',
+                      specialities: [],
+                      sortBy: ''
+                    })}
+                    className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function Home() {
+  return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
@@ -184,62 +247,13 @@ export default function Home() {
           </p>
         </div>
         
-        <div className="mb-12 max-w-2xl mx-auto">
-          <AutocompleteSearch
-            doctors={doctors || []}
-            onSearch={handleSearch}
-          />
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          <FilterPanel
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            availableSpecialities={availableSpecialities}
-          />
-
-          <div className="flex-1">
-            {isLoading ? (
-              renderLoadingSkeleton()
-            ) : error ? (
-              renderError()
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="text-gray-600">
-                    Found {filteredDoctors.length} doctors
-                  </div>
-                  {filters.sortBy && (
-                    <div className="text-sm text-gray-500">
-                      Sorted by: {filters.sortBy === 'fees' ? 'Fees (Low to High)' : 'Experience (High to Low)'}
-                    </div>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredDoctors.map(doctor => (
-                    <DoctorCard key={doctor?.id || Math.random()} doctor={doctor} />
-                  ))}
-                </div>
-                {filteredDoctors.length === 0 && (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <div className="text-gray-500 text-lg">No doctors found matching your criteria</div>
-                    <button 
-                      onClick={() => setFilters({
-                        search: '',
-                        consultationType: '',
-                        specialities: [],
-                        sortBy: ''
-                      })}
-                      className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Clear all filters
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+        <Suspense fallback={
+          <div className="text-center py-12">
+            <div className="text-gray-500">Loading...</div>
           </div>
-        </div>
+        }>
+          <DoctorListContent />
+        </Suspense>
       </div>
     </main>
   );

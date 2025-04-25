@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface Doctor {
   id: string;
@@ -52,15 +53,17 @@ export default function DoctorCard({ doctor }: DoctorCardProps) {
 
       <div className="relative">
         {/* Image Section */}
-        <div className="h-48 overflow-hidden">
+        <div className="relative h-48 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
-          <img
+          <Image
             src={imageUrl}
             alt={`Dr. ${doctor.name}'s photo`}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             onError={() => setImageError(true)}
             data-testid="doctor-image"
-            loading="lazy"
+            priority={false}
           />
           {/* Consultation Badges */}
           <div className="absolute top-14 right-4 flex flex-col gap-2 z-20">
